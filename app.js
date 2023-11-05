@@ -5,16 +5,23 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const mongoose = require("mongoose");
+const cors = require("cors");
 
 const indexRouter = require("./routes/index");
 const apiRouter = require("./routes/api");
 
 const app = express();
 
+let corsOptions = {
+  origin: ["http://localhost:5173"],
+  allowedHeaders: "Content-Type,Authorization",
+  optionsSuccessStatus: 200,
+};
+
 // Set up mongodb connect
 const mongoDb = process.env.DB_URL;
 
-mongoose.connect(mongoDb, {useUnifiedTopology: true, useNewUrlParser: true});
+mongoose.connect(mongoDb);
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "mongo connection error"));
 
@@ -27,9 +34,10 @@ app.use(express.json());
 app.use(express.urlencoded({extended: false}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
+app.options("*", cors(corsOptions));
 
-app.use("/", indexRouter);
-app.use("/api", apiRouter);
+app.use("/", cors(corsOptions), indexRouter);
+app.use("/api", cors(corsOptions), apiRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -44,7 +52,7 @@ app.use(function (err, req, res, next) {
 
   // render the error page
   res.status(err.status || 500);
-  res.render("error");
+  res.json({error: err.message});
 });
 
 module.exports = app;
