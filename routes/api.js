@@ -10,11 +10,14 @@ const storage = multer.diskStorage({
     cb(null, "./uploads/");
   },
   filename: function (req, file, cb) {
-    cb(null, new Date().toISOString().slice(0, 10) + file.originalname);
+    cb(
+      null,
+      new Date().toISOString().slice(0, 10) + file.originalname
+    );
   },
 });
 
-const upload = multer({storage: storage});
+const upload = multer({ storage: storage });
 
 // index route
 router.get("/", function (req, res, next) {
@@ -23,7 +26,19 @@ router.get("/", function (req, res, next) {
 
 // Posts
 
-router.post("/posts", upload.single("photoUrl"), post_controller.create_post);
+router.get("/posts/:id", post_controller.get_single_post);
+
+router.post(
+  "/posts/:id",
+  upload.single("photoUrl"),
+  post_controller.update_single_post
+);
+
+router.post(
+  "/posts",
+  upload.single("photoUrl"),
+  post_controller.create_post
+);
 
 router.get("/posts", post_controller.get_posts);
 
