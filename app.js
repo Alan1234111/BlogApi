@@ -6,6 +6,7 @@ const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const bodyParser = require("body-parser");
 
 const indexRouter = require("./routes/index");
 const apiRouter = require("./routes/api");
@@ -14,11 +15,14 @@ const app = express();
 
 let corsOptions = {
   origin: ["http://localhost:5173"],
-  allowedHeaders: "Content-Type,Authorization",
+  allowedHeaders: ["Content-Type", "Authorization"],
   optionsSuccessStatus: 200,
 };
 
 app.use("/uploads", express.static("./uploads"));
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Set up mongodb connect
 const mongoDb = process.env.DB_URL;
