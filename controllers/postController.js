@@ -6,7 +6,8 @@ const jwt = require("jsonwebtoken");
 
 exports.get_posts = async function (req, res, next) {
   try {
-    const posts = await Post.find({});
+    const posts = await Post.find({}).populate("tag").exec();
+    console.log(posts);
     if (!posts) {
       return res.status(404).json({err: "posts not found"});
     }
