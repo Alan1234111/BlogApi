@@ -3,14 +3,15 @@ const Schema = mongoose.Schema;
 
 const CommentSchema = new Schema(
   {
-    text: { type: String, required: true },
-    author: { type: String, required: true },
-    like: { type: Number, default: 0, required: true },
-    post: {
+    comment: { type: String, required: true },
+    user: { type: Schema.Types.ObjectId, ref: "User" },
+    postId: {
       type: Schema.Types.ObjectId,
       ref: "Post",
       required: true,
     },
+    likeCount: { type: Number, default: 0 },
+    likes: [{ type: Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
 );
