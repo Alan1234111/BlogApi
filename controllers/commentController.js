@@ -1,5 +1,5 @@
 require("dotenv").config();
-const {body, validationResult} = require("express-validator");
+const { body, validationResult } = require("express-validator");
 const Post = require("../models/post");
 const User = require("../models/user");
 const Comment = require("../models/comment");
@@ -9,13 +9,14 @@ const secretkey = process.env.SECRET_KEY;
 
 exports.allCommentsOnPost = async (req, res, next) => {
   try {
-    let comments = await Comment.find({postId: req.params.postid}).populate("user").exec();
-
-    console.log(comments);
+    let comments = await Comment.find({ postId: req.params.postid })
+      .populate("user")
+      .exec();
 
     return res.status(200).json(comments);
   } catch (err) {
-    return res.status(500).json({err: "Internal Server Error"});
+    console.error("Error " + err);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
@@ -23,16 +24,20 @@ exports.allComments = async (req, res, next) => {
   try {
     let comments = await Comment.find({}).populate("user");
     if (!comments) {
-      return res.status(404).json({message: "No comments"});
+      return res.status(404).json({ message: "No comments" });
     }
-    return res.status(200).json({comments});
+    return res.status(200).json({ comments });
   } catch (err) {
-    return next(err);
+    console.error("Error " + err);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
 exports.createComment = [
-  body("comment").trim().isLength({min: 1}).withMessage("You have left an empty comment"),
+  body("comment")
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage("You have left an empty comment"),
 
   async (req, res, next) => {
     const errors = validationResult(req);
@@ -44,23 +49,37 @@ exports.createComment = [
     }
 
     try {
-      jwt.verify(req.token, secretkey, async (err, user, authData) => {
-        const comment = new Comment({
-          comment: req.body.comment,
-          postId: req.params.postid,
-          user: user.userId,
-        });
+      jwt.verify(
+        req.token,
+        secretkey,
+        async (err, user, authData) => {
+          if (err) {
+            console.error("JWT verification error:" + err);
+            return res
+              .status(500)
+              .json({ error: "Internal Server Error" });
+          }
+          const comment = new Comment({
+            comment: req.body.comment,
+            postId: req.params.postid,
+            user: user.userId,
+          });
 
-        // Save the comment asynchronously
-        await comment.save();
+          // Save the comment asynchronously
+          await comment.save();
 
-        // Update the associated post with the comment
-        await Post.findOneAndUpdate({_id: req.params.postid}, {$push: {comment: comment}});
+          // Update the associated post with the comment
+          await Post.findOneAndUpdate(
+            { _id: req.params.postid },
+            { $push: { comment: comment } }
+          );
 
-        res.status(200).json({message: "Comment saved", comment});
-      });
+          res.status(200).json({ message: "Comment saved", comment });
+        }
+      );
     } catch (err) {
-      res.status(400).json({err});
+      console.error("Error " + err);
+      return res.status(500).json({ error: "Internal Server Error" });
     }
   },
 ];
@@ -68,28 +87,40 @@ exports.createComment = [
 exports.updateLike = async (req, res, next) => {
   try {
     jwt.verify(req.token, secretkey, async (err, user, authData) => {
+      if (err) {
+        console.error("JWT verification error: " + err);
+        return res
+          .status(500)
+          .json({ error: "Internal Server Error" });
+      }
+
       let commentToLike = await Comment.find(
-        {_id: req.body.commentid},
+        { _id: req.body.commentid },
         {
           likeCount: 1,
           likes: {
-            $elemMatch: {$eq: user.userId},
+            $elemMatch: { $eq: user.userId },
           },
         }
       );
 
-      if (commentToLike[0].likes === undefined || commentToLike[0].likes.length == 0) {
+      if (
+        commentToLike[0].likes === undefined ||
+        commentToLike[0].likes.length == 0
+      ) {
         let result = await Comment.updateOne(
           {
             _id: req.body.commentid,
-            likes: {$ne: user.userId},
+            likes: { $ne: user.userId },
           },
           {
-            $inc: {likeCount: +1},
-            $push: {likes: user.userId},
+            $inc: { likeCount: +1 },
+            $push: { likes: user.userId },
           }
         );
-        return res.status(200).json({result: result, comment: commentToLike});
+        return res
+          .status(200)
+          .json({ result: result, comment: commentToLike });
       } else {
         let result = await Comment.updateOne(
           {
@@ -97,14 +128,17 @@ exports.updateLike = async (req, res, next) => {
             likes: user.userId,
           },
           {
-            $inc: {likeCount: -1},
-            $pull: {likes: user.userId},
+            $inc: { likeCount: -1 },
+            $pull: { likes: user.userId },
           }
         );
-        return res.status(200).json({result: result, comment: commentToLike});
+        return res
+          .status(200)
+          .json({ result: result, comment: commentToLike });
       }
     });
   } catch (err) {
     console.error("Error " + err);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };

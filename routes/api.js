@@ -14,11 +14,14 @@ const storage = multer.diskStorage({
     cb(null, "./uploads/");
   },
   filename: function (req, file, cb) {
-    cb(null, new Date().toISOString().slice(0, 10) + file.originalname);
+    cb(
+      null,
+      new Date().toISOString().slice(0, 10) + file.originalname
+    );
   },
 });
 
-const upload = multer({storage: storage});
+const upload = multer({ storage: storage });
 
 // index route
 router.get("/", function (req, res, next) {
@@ -39,19 +42,35 @@ router.post("/cms/login", auth_controller.loginCms);
 
 // Posts
 
+router.get("/posts/first-five", post_controller.get_first_five_posts);
+
+router.get("/posts/latests", post_controller.get_latest_posts);
+
 router.delete("/posts/:id", verifyToken, post_controller.delete_post);
 
 router.get("/posts/:id", post_controller.get_single_post);
 
-router.post("/posts/:id", verifyToken, upload.single("photoUrl"), post_controller.update_single_post);
+router.post(
+  "/posts/:id",
+  verifyToken,
+  upload.single("photoUrl"),
+  post_controller.update_single_post
+);
 
 router.get("/posts", post_controller.get_posts);
 
-router.post("/posts", verifyToken, upload.single("photoUrl"), post_controller.create_post);
+router.post(
+  "/posts",
+  verifyToken,
+  upload.single("photoUrl"),
+  post_controller.create_post
+);
 
 // Tag
 
 router.post("/tags", verifyToken, tag_controller.create_tag);
+
+router.get("/tags/random", tag_controller.get_random_tags);
 
 router.get("/tags/:id", tag_controller.get_post_from_tag);
 
@@ -59,9 +78,16 @@ router.get("/tags", tag_controller.get_tags);
 
 // Comments
 
-router.get("/posts/:postid/comments", comment_controller.allCommentsOnPost);
+router.get(
+  "/posts/:postid/comments",
+  comment_controller.allCommentsOnPost
+);
 
-router.post("/posts/:postid/comments", verifyToken, comment_controller.createComment);
+router.post(
+  "/posts/:postid/comments",
+  verifyToken,
+  comment_controller.createComment
+);
 
 router.put("/comments", verifyToken, comment_controller.updateLike);
 
